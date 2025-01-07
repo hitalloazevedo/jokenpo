@@ -1,91 +1,116 @@
-import os
-import random
+from interfaces import TerminalInterface, ColorInterface
+from random import choice
+from sys import exit
+from implementations import Terminal, Color
 
-RED = '\033[31m'
-GREEN = '\033[32m'
-BLUE = '\033[34m'
-YELLOW = '\033[33m'
-NORMAL = '\033[m'
+class Jokenpo:
+    def __init__(self, terminal: TerminalInterface, colors: ColorInterface):
+        self.options = ['rock', 'paper', 'scissors']
+        self.terminal = terminal
+        self.colors = colors
+        self.playerPoints = 0
+        self.computerPoints = 0
+        self.rounds = 0
 
-def resposta():
-    res = str(input('Deseja jogar novamente?[S/N]: ')).lower().strip()[0]
-    while res not in 'sn':
-        print('Opção inválida!')
-        res = str(input('Deseja jogar novamente?[S/N]: ')).lower().strip()[0]
+    def showHeader(self):
+        self.terminal.drawLine(char="=", width=60)
+        self.terminal.printAtCenter('Rock, paper, scissors', 60)
+        self.terminal.drawLine(char="=", width=60)
     
-    if res == 'n':
-        exit()
+    def computeScore(self, player, computer):
+        if player == computer:
+            pass
     
-    return res
+        if player == 'rock' and computer == 'paper':
+            self.computerPoints += 1
 
+        if player == 'paper' and computer == 'scissors':
+            self.computerPoints += 1
 
-def cabecalho():
-    print('=' * 60)
-    print(f'{"JOKENPÔ":^60}')
-    print('=' * 60)
+        if player == 'scissors' and computer == 'rock':
+            self.computerPoints += 1
 
+        if player == 'paper' and computer == 'rock':
+            self.playerPoints += 1
 
-def opcao():
-    opcoes = str(input('[1] - Pedra\n[2] - Papel\n[3] - Tesoura\nSua opção >>> ')).strip()
-    if opcoes == '':
-        print('Opção inválida!')
-    while opcoes not in '123':
-        print('Opção inválida!')
-        opcoes = str(input('[1] - Pedra\n[2] - Papel\n[3] - Tesoura\nSua opção >>> '))
+        if player == 'scissors' and computer == 'paper':
+            self.playerPoints += 1
+
+        if player == 'rock' and computer == 'scissors':
+            self.playerPoints += 1
+
+    def getComputerChoice(self):
+        return choice(self.options)
     
-    if opcoes == '1':
-        return 'pedra'
+    def getPlayerChoice(self):
+        choiceMap = {
+            '1': 'rock',
+            '2': 'paper',
+            '3': 'scissors'
+        }
 
-    if opcoes == '2':
-        return 'papel'
+        try:
+            choice = int(input("Enter your choice: "))
+        except:
+            print('Your choice must be numeric.')
+            exit()
 
-    if opcoes == '3':
-        return 'tesoura'
+        if choice == 0:
+            exit()
 
+        while (choice < 1 or choice > 3):
+            print('Pick an valid choice.')
+            choice = int(input("Enter your choice: "))
+        
+        return choiceMap[str(choice)]
+  
+    def playRound(self):
+        self.terminal.printAtCenter(f'{self.colors.yellow}Round: {self.rounds}{self.colors.regular}', 64)
+        self.terminal.printAtCenter(f"You: {self.playerPoints}   |   Computer: {self.computerPoints}", 60)
+        self.terminal.drawLine(char="=", width=60)
 
-def computador():
-    opcoes = ['pedra', 'papel', 'tesoura']
-    return random.choice(opcoes)
+        print(f'[1] - rock, [2] - paper, [3] - scissors  |  {self.colors.red}[0] - Quit{self.colors.regular}')
+        self.terminal.drawLine(char="-", width=60)
 
+        player = self.getPlayerChoice()
+        computer = self.getComputerChoice()
 
-def vencedor(usuario, computador):
-    computador_vence = '\033[31mComputador Venceu!\033[m'
-    jogador_vence = '\033[32mVocê Venceu!\033[m'
-    print('=' * 30)
-    print(f'Computador jogou: {computador}\nPlayer jogou: {usuario}')
-    if usuario == computador:
-        print('\033[33mEmpate!\033[m')
-    elif usuario == 'pedra' and computador == 'papel':
-        print(computador_vence)
-    elif usuario == 'pedra' and computador == 'tesoura':
-        print(jogador_vence)
-    elif usuario == 'papel' and computador == 'tesoura':
-        print(computador_vence)
-    elif usuario == 'papel' and computador == 'pedra':
-        print(jogador_vence)
-    elif usuario == 'tesoura' and computador == 'pedra':
-        print(computador_vence)
-    elif usuario == 'tesoura' and computador == 'papel':
-        print(jogador_vence)
-    print('=' * 30)
-    
+        self.computeScore(player, computer)
 
-while True:
-    rounds = 1
-    while rounds < 4:
-        os.system('cls')
-        cabecalho()
-        print('=' * 11)
-        print(f'| Round {YELLOW}{rounds}{NORMAL} |')
-        print('=' * 11)
-        player = opcao()
-        maquina = computador()
+        self.rounds += 1
 
-        os.system('cls')
-        vencedor(player, maquina)
-        rounds += 1
+    def evalWinner(self):
 
-        input('Pressione [ENTER]')
+        self.terminal.printAtCenter(f'{self.colors.yellow}Final Score{self.colors.regular}', 66)
+        self.terminal.printAtCenter(f'{self.colors.cyan}Computer: {self.computerPoints}{self.colors.regular}', 66)
+        self.terminal.printAtCenter(f'{self.colors.purple}You: {self.playerPoints}{self.colors.regular}', 66)
 
-    resposta() 
+        if self.computerPoints == self.playerPoints:
+            self.terminal.printAtCenter(f"{self.colors.blue}Draw!{self.colors.regular}", 66)
+        if self.computerPoints > self.playerPoints:
+            self.terminal.printAtCenter(f"{self.colors.green}Computer wins!{self.colors.regular}", 66)
+        if self.computerPoints < self.playerPoints:
+            self.terminal.printAtCenter(f"{self.colors.green}Player wins!{self.colors.regular}", 66)
 
+    def startGame(self):
+
+        self.terminal.clear()
+
+        while self.rounds <= 2:
+            self.terminal.clear()
+            self.showHeader()
+            self.playRound()
+
+        self.terminal.clear()
+        self.showHeader()
+        self.evalWinner()
+
+        
+if __name__ == '__main__':
+
+    terminal = Terminal()
+    colors = Color()
+
+    game = Jokenpo(terminal, colors)
+
+    game.startGame()
